@@ -22,26 +22,35 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
+app.use(function(req, res, next) {
+  console.log('serving ', req.method, ' at ', req.url)
+  next()
+})
 
-app.get('/', 
-function(req, res) {
+
+app.get('/', /*util.isLoggedIn*/ function(req, res) {
   res.render('index');
 });
 
-app.get('/create', 
-function(req, res) {
+app.get('/login', function(req, res) {
+  res.render('login')
+})
+
+app.get('/signup', function(req, res) {
+  res.render('signup')
+})
+
+app.get('/create', /*util.isLoggedIn*/ function(req, res) {
   res.render('index');
 });
 
-app.get('/links', 
-function(req, res) {
+app.get('/links', function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.status(200).send(links.models);
   });
 });
 
-app.post('/links', 
-function(req, res) {
+app.post('/links', /*MIDDLEWARE AUTH*/function(req, res) {
   var uri = req.body.url;
 
   if (!util.isValidUrl(uri)) {
@@ -72,6 +81,38 @@ function(req, res) {
   });
 });
 
+app.post('/login', /*MIDDLEWARE AUTH*/function(req, res) {
+  // req.body
+  console.log('user info: ',  req.body)
+  res.end()
+});
+
+app.post('/signup', /*MIDDLEWARE AUTH*/function(req, res) {
+  var user = req.body.username;
+  var password = req.body.password;
+
+  new User({username: user}).fetch().then(function(found) {
+    console.log('FOUND: ', found);
+    if ( found ) {
+      console.log('USER EXISTS');
+      res.status(401);
+      res.redirect('/login')
+    }
+    else {
+      Users.create({
+        username: user,
+        password: password
+      })
+      .then(function(newUser) {
+        res.status(200);
+        res.redirect('/');
+      });
+    }
+  });
+  //   }
+  // console.log('signup user info: ',  req.body)
+  //
+});
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
