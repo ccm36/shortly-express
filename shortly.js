@@ -2,6 +2,7 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
+var session = require('express-session');
 
 
 var db = require('./app/config');
@@ -12,6 +13,7 @@ var Link = require('./app/models/link');
 var Click = require('./app/models/click');
 
 var app = express();
+app.use(session({secret: 'get-out-of-here', cookie: {maxAge: 60000}}));
 
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
@@ -28,7 +30,7 @@ app.use(function(req, res, next) {
 })
 
 
-app.get('/', /*util.isLoggedIn*/ function(req, res) {
+app.get('/', util.isLoggedIn, function(req, res) {
   res.render('index');
 });
 
@@ -83,11 +85,28 @@ app.post('/links', /*MIDDLEWARE AUTH*/function(req, res) {
 
 app.post('/login', /*MIDDLEWARE AUTH*/function(req, res) {
   // req.body
-  console.log('user info: ',  req.body)
-  res.end()
+
+  var user = req.body.username;
+  var password = req.body.password;
+
+  new User({username: user}).fetch().then(function(found) {
+    console.log('FOUND: ', found);
+    if ( found ) {
+      if (password === found.attributes.password) {
+        res.status(201);
+        res.redirect('/');
+      } else {
+        res.status(401);
+        res.redirect('/login')
+      }
+    } else {
+      res.status(400);
+      res.redirect('/signup');
+    }
+  });
 });
 
-app.post('/signup', /*MIDDLEWARE AUTH*/function(req, res) {
+app.post('/signup', function(req, res) {
   var user = req.body.username;
   var password = req.body.password;
 
@@ -97,8 +116,8 @@ app.post('/signup', /*MIDDLEWARE AUTH*/function(req, res) {
       console.log('USER EXISTS');
       res.status(401);
       res.redirect('/login')
-    }
-    else {
+    } else {
+      req.session.username = user;
       Users.create({
         username: user,
         password: password
