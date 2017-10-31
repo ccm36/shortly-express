@@ -5,9 +5,11 @@ var Link = require('./link.js');
 
 
 var User = db.Model.extend({
-  initialize() {
-    //encryption
-  },
+  // initialize: function() {
+  //   this.on('creating', function(model, attr, options) {
+  //     console.log('MODEL USERNAME: ',model.get('username'));
+  //   })
+  // },
   tableName: 'users',
   hasTimestamps: true
 

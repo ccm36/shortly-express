@@ -99,6 +99,7 @@ app.post('/login', /*MIDDLEWARE AUTH*/function(req, res) {
   var user = req.body.username;
   var password = req.body.password;
 
+
   new User({username: user}).fetch().then(function(found) {
     if ( found ) {
       if (password === found.attributes.password) {
@@ -121,6 +122,13 @@ app.post('/login', /*MIDDLEWARE AUTH*/function(req, res) {
 app.post('/signup', function(req, res) {
   var user = req.body.username;
   var password = req.body.password;
+  var salter = 10;
+  var privPassword;
+  bcrypt.hash(password, salter, function(err, hash) {
+    if (err) { throw err; }
+    privPassword = hash;
+  });
+
 
   new User({username: user}).fetch().then(function(found) {
     if ( found ) {
@@ -130,7 +138,7 @@ app.post('/signup', function(req, res) {
       req.session.userId = user;
       Users.create({
         username: user,
-        password: password
+        password: privPassword
       })
       .then(function(newUser) {
         res.status(200);
