@@ -97,24 +97,27 @@ app.post('/login', /*MIDDLEWARE AUTH*/function(req, res) {
   // req.body
 
   var user = req.body.username;
-  var password = req.body.password;
+  var password = req.body.password
+
 
 
   new User({username: user}).fetch().then(function(found) {
     if ( found ) {
-      if (password === found.attributes.password) {
-        // console.log('Session info: ', req.session)
-        req.session.username = user;
-        req.session.userId = found.attributes.id;
-        res.status(201);
-        res.redirect('/');
-      } else {
-        res.status(401);
-        res.redirect('/login')
-      }
+      bcrypt.compare(password, found.attributes.password, function(err, isPassword) {
+        if (err) { throw err; }
+        if (isPassword) {
+          req.session.username = user;
+          req.session.userId = found.attributes.id;
+          res.status(201);
+          res.redirect('/');
+        } else {
+          res.status(401);
+          res.redirect('/login')
+        }
+      });
     } else {
-      res.status(400);
-      res.redirect('/login');
+        res.status(400);
+        res.redirect('/login');
     }
   });
 });
@@ -124,7 +127,8 @@ app.post('/signup', function(req, res) {
   var password = req.body.password;
   var salter = 10;
   var privPassword;
-  bcrypt.hash(password, salter, function(err, hash) {
+  console.log('INSDE BCRPYT');
+  bcrypt.hash(password, null, null, function(err, hash) {
     if (err) { throw err; }
     privPassword = hash;
   });
