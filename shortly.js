@@ -11,6 +11,7 @@ var User = require('./app/models/user');
 var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
+var bcrypt = require('bcrypt-nodejs');
 
 var app = express();
 app.use(session({secret: 'get-out-of-here', cookie: {maxAge: 6000000}}));
@@ -46,9 +47,18 @@ app.get('/create', util.isLoggedIn, function(req, res) {
   res.render('index');
 });
 
+app.get('/logOut', util.isLoggedIn, function(req, res) {
+  req.session.userId = null;
+  res.redirect('/login');
+});
+
 app.get('/links', util.isLoggedIn, function(req, res) {
   Links.reset().fetch().then(function(links) {
-    res.status(200).send(links.models);
+    var linkList = links.filter( function ( link ) {
+      return link.attributes.userId === req.session.userId;
+    })
+    console.log('LINK List: ', linkList);
+    res.status(200).send(linkList);
   });
 });
 
