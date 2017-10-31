@@ -8,13 +8,11 @@ var Link = db.Model.extend({
   tableName: 'urls',
   hasTimestamps: true,
   defaults: {
-    visits: 0
+    visits: 0,
+    userId: null
   },
   clicks: function() {
     return this.hasMany(Click);
-  },
-  user: function() {
-    return this.belongsTo(User, 'userId');
   },
   initialize: function() {
     this.on('creating', function(model, attrs, options) {

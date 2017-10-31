@@ -13,7 +13,7 @@ var Link = require('./app/models/link');
 var Click = require('./app/models/click');
 
 var app = express();
-app.use(session({secret: 'get-out-of-here', cookie: {maxAge: 60000}}));
+app.use(session({secret: 'get-out-of-here', cookie: {maxAge: 6000000}}));
 
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
@@ -34,15 +34,15 @@ app.get('/', util.isLoggedIn, function(req, res) {
   res.render('index');
 });
 
-app.get('/login', function(req, res) {
+app.get('/login', util.isAlreadyLoggedIn, function(req, res) {
   res.render('login')
 })
 
-app.get('/signup', function(req, res) {
+app.get('/signup', util.isAlreadyLoggedIn, function(req, res) {
   res.render('signup')
 })
 
-app.get('/create', /*util.isLoggedIn*/ function(req, res) {
+app.get('/create', util.isLoggedIn, function(req, res) {
   res.render('index');
 });
 
@@ -54,6 +54,7 @@ app.get('/links', function(req, res) {
 
 app.post('/links', /*MIDDLEWARE AUTH*/function(req, res) {
   var uri = req.body.url;
+  var userId = req.session.userId;
 
   if (!util.isValidUrl(uri)) {
     console.log('Not a valid url: ', uri);
@@ -69,11 +70,12 @@ app.post('/links', /*MIDDLEWARE AUTH*/function(req, res) {
           console.log('Error reading URL heading: ', err);
           return res.sendStatus(404);
         }
-
+        console.log('session in /links post: ', req.session, req.sessionID)
         Links.create({
           url: uri,
           title: title,
-          baseUrl: req.headers.origin
+          baseUrl: req.headers.origin,
+          userId: req.session.userId
         })
         .then(function(newLink) {
           res.status(200).send(newLink);
@@ -93,6 +95,10 @@ app.post('/login', /*MIDDLEWARE AUTH*/function(req, res) {
     console.log('FOUND: ', found);
     if ( found ) {
       if (password === found.attributes.password) {
+        // console.log('Session info: ', req.session)
+        req.session.username = user;
+        req.session.userId = found.attributes.id;
+        console.log('setting session: , ', user, req.sessionID)
         res.status(201);
         res.redirect('/');
       } else {
@@ -117,7 +123,7 @@ app.post('/signup', function(req, res) {
       res.status(401);
       res.redirect('/login')
     } else {
-      req.session.username = user;
+      req.session.cookie.userId = user;
       Users.create({
         username: user,
         password: password
