@@ -46,7 +46,7 @@ app.get('/create', util.isLoggedIn, function(req, res) {
   res.render('index');
 });
 
-app.get('/links', function(req, res) {
+app.get('/links', util.isLoggedIn, function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.status(200).send(links.models);
   });
@@ -67,10 +67,8 @@ app.post('/links', /*MIDDLEWARE AUTH*/function(req, res) {
     } else {
       util.getUrlTitle(uri, function(err, title) {
         if (err) {
-          console.log('Error reading URL heading: ', err);
           return res.sendStatus(404);
         }
-        console.log('session in /links post: ', req.session, req.sessionID)
         Links.create({
           url: uri,
           title: title,
@@ -92,13 +90,11 @@ app.post('/login', /*MIDDLEWARE AUTH*/function(req, res) {
   var password = req.body.password;
 
   new User({username: user}).fetch().then(function(found) {
-    console.log('FOUND: ', found);
     if ( found ) {
       if (password === found.attributes.password) {
         // console.log('Session info: ', req.session)
         req.session.username = user;
         req.session.userId = found.attributes.id;
-        console.log('setting session: , ', user, req.sessionID)
         res.status(201);
         res.redirect('/');
       } else {
@@ -107,7 +103,7 @@ app.post('/login', /*MIDDLEWARE AUTH*/function(req, res) {
       }
     } else {
       res.status(400);
-      res.redirect('/signup');
+      res.redirect('/login');
     }
   });
 });
@@ -117,13 +113,11 @@ app.post('/signup', function(req, res) {
   var password = req.body.password;
 
   new User({username: user}).fetch().then(function(found) {
-    console.log('FOUND: ', found);
     if ( found ) {
-      console.log('USER EXISTS');
       res.status(401);
       res.redirect('/login')
     } else {
-      req.session.cookie.userId = user;
+      req.session.userId = user;
       Users.create({
         username: user,
         password: password
@@ -134,9 +128,6 @@ app.post('/signup', function(req, res) {
       });
     }
   });
-  //   }
-  // console.log('signup user info: ',  req.body)
-  //
 });
 /************************************************************/
 // Write your authentication routes here
